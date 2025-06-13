@@ -1,0 +1,142 @@
+-- Backpack Duplicator Script
+-- This script creates a UI with a button that duplicates items in the player's backpack
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Create the UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DuplicatorGui"
+ScreenGui.Parent = PlayerGui
+
+-- Create a frame for the UI
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
+MainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+MainFrame.Parent = ScreenGui
+
+-- Create a title for the UI
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Text = "Backpack Duplicator"
+TitleLabel.TextSize = 18
+TitleLabel.Parent = MainFrame
+
+-- Create the dupe button
+local DupeButton = Instance.new("TextButton")
+DupeButton.Name = "DupeButton"
+DupeButton.Size = UDim2.new(0.8, 0, 0, 40)
+DupeButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+DupeButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+DupeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DupeButton.Font = Enum.Font.SourceSansBold
+DupeButton.Text = "DUPE"
+DupeButton.TextSize = 24
+DupeButton.Parent = MainFrame
+
+-- Make the UI draggable
+local UserInputService = game:GetService("UserInputService")
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TitleLabel.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleLabel.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Function to duplicate all items in the backpack
+local function duplicateBackpackItems()
+    local backpack = game:GetService("Players").LocalPlayer.Backpack
+    if not backpack then return end
+    
+    -- Store all items in the backpack to duplicate
+    local itemsToDuplicate = {}
+    for _, item in pairs(backpack:GetChildren()) do
+        table.insert(itemsToDuplicate, item)
+    end
+    
+    -- Check if we found any items
+    if #itemsToDuplicate == 0 then
+        -- Create notification if no items found
+        local notification = Instance.new("TextLabel")
+        notification.Name = "Notification"
+        notification.Size = UDim2.new(1, 0, 0, 20)
+        notification.Position = UDim2.new(0, 0, 1, 5)
+        notification.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+        notification.TextColor3 = Color3.fromRGB(255, 0, 0)
+        notification.Font = Enum.Font.SourceSans
+        notification.Text = "No items found in backpack to duplicate!"
+        notification.TextSize = 14
+        notification.Parent = MainFrame
+        
+        -- Remove notification after 2 seconds
+        game:GetService("Debris"):AddItem(notification, 2)
+        return
+    end
+    
+    -- Create duplicates of each item in the backpack
+    for _, item in pairs(itemsToDuplicate) do
+        local duplicate = item:Clone()
+        duplicate.Parent = backpack
+    end
+    
+    -- Visual feedback
+    local notification = Instance.new("TextLabel")
+    notification.Name = "Notification"
+    notification.Size = UDim2.new(1, 0, 0, 20)
+    notification.Position = UDim2.new(0, 0, 1, 5)
+    notification.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+    notification.TextColor3 = Color3.fromRGB(0, 255, 0)
+    notification.Font = Enum.Font.SourceSans
+    notification.Text = "Items Duplicated!"
+    notification.TextSize = 14
+    notification.Parent = MainFrame
+    
+    -- Remove notification after 2 seconds
+    game:GetService("Debris"):AddItem(notification, 2)
+end
+
+-- Connect the button to the duplication function
+DupeButton.MouseButton1Click:Connect(function()
+    -- Button press animation
+    DupeButton.BackgroundColor3 = Color3.fromRGB(0, 80, 170)
+    wait(0.1)
+    DupeButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
